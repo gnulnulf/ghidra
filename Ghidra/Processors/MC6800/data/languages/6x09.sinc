@@ -57,6 +57,8 @@ define token opbyte (8)
     op        = (0,7)
     op45      = (4,5)
     op47      = (4,7)
+    addrMode  = (4,5)
+    acc_4     = (4,4)
 ;
 
 define token data8 (8)
@@ -64,6 +66,8 @@ define token data8 (8)
     simm8     = (0,7) signed
     simm5     = (0,4) signed
     idxMode   = (0,4)
+    idxMode2  = (0,3)
+    indMode   = (4,4)
     noOffset5 = (7,7)
     idxReg    = (5,6)
     imm80     = (0,0)
@@ -83,145 +87,33 @@ define token data (16)
     simm16  = (0,15) signed
 ;
 
+define token opprebyte(16)
+	preop   = (0,15)
+;
+  
 attach variables [ idxReg ] [ X Y U S ];
 
+
+
+
+
+# 0RRddddd EA=,R + signed 5bit d
 EA: simm5,idxReg    is simm5 & idxReg & noOffset5=0
 {
      local offs:1 = simm5;
      local addr:2 = idxReg + sext(offs);
      export addr; 
 }
-EA: ","^idxReg    is idxReg & noOffset5=1 & idxMode=0b00100 # no offset
-{
-     local addr:2 = idxReg;
-     export addr; 
-}
-EA: simm8,idxReg    is idxReg & noOffset5=1 & idxMode=0b01000; simm8 # 8-bit offset
-{
-     local addr:2 = idxReg + simm8;
-     export addr; 
-}
-EA: simm16,idxReg    is idxReg & noOffset5=1 & idxMode=0b01001; simm16 # 16-bit offset
-{
-     local addr:2 = idxReg + simm16;
-     export addr; 
-}
 
-@ifdef H6309
-EA: ","^W    is idxReg=0b00 & noOffset5=1 & idxMode=0b01111 & W # no offset
-{
-     local addr:2 = W;
-     export addr; 
-}
-EA: simm16,W    is idxReg=0b01 & noOffset5=1 & idxMode=0b01111; simm16 & W # 16-bit offset
-{
-     local addr:2 = W + simm16;
-     export addr; 
-}
-@endif # H6309
-
-EA: A,idxReg    is idxReg & noOffset5=1 & idxMode=0b00110 & A # A,R
-{
-     local addr:2 = idxReg + sext(A);
-     export addr; 
-}
-EA: B,idxReg    is idxReg & noOffset5=1 & idxMode=0b00101 & B # B,R
-{
-     local addr:2 = idxReg + sext(B);
-     export addr; 
-}
-EA: D,idxReg    is idxReg & noOffset5=1 & idxMode=0b01011 & D # D,R
-{
-     local addr:2 = idxReg + D;
-     export addr; 
-}
-
-@ifdef H6309
-EA: E,idxReg    is idxReg & noOffset5=1 & idxMode=0b00111 & E # E,R
-{
-     local addr:2 = idxReg + sext(E);
-     export addr; 
-}
-EA: F,idxReg    is idxReg & noOffset5=1 & idxMode=0b01010 & F # F,R
-{
-     local addr:2 = idxReg + sext(F);
-     export addr; 
-}
-EA: W,idxReg    is idxReg & noOffset5=1 & idxMode=0b01110 & W # W,R
-{
-     local addr:2 = idxReg + W;
-     export addr; 
-}
-@endif # H6309
-
-
+# 1RR00000 ,R+
 EA: ","^idxReg^"+"    is idxReg & noOffset5=1 & idxMode=0b00000 # ,R+
 {
      addr:2 = idxReg;
      idxReg = idxReg + 1;
      export addr;
 }
-EA: ","^idxReg^"++"    is idxReg & noOffset5=1 & idxMode=0b00001 # ,R++
-{
-     local addr:2 = idxReg;
-     idxReg = idxReg + 2;
-     export addr;
-}
-EA: ",-"^idxReg    is idxReg & noOffset5=1 & idxMode=0b00010 # ,-R
-{
-     idxReg = idxReg - 1;
-     local addr:2 = idxReg;
-     export addr;
-}
-EA: ",--"^idxReg    is idxReg & noOffset5=1 & idxMode=0b00011 # ,--R
-{
-     idxReg = idxReg - 2;
-     local addr:2 = idxReg;
-     export addr;
-}
 
-@ifdef H6309
-EA: ","^W^"++"    is idxReg=0b10 & noOffset5=1 & idxMode=0b01111 & W # ,W++
-{
-     local addr:2 = W;
-     W = W + 2;
-     export addr;
-}
-EA: ",--"^W    is idxReg=0b11 & noOffset5=1 & idxMode=0b01111 & W # ,--W
-{
-     W = W - 2;
-     local addr:2 = W;
-     export addr;
-}
-@endif # H6309
-
-EA: addr,"PCR" is noOffset5=1 & idxMode=0b01100; simm8 [ addr = inst_next + simm8; ] 
-{
-     export addr; 
-}
-EA: addr,"PCR" is noOffset5=1 & idxMode=0b01101; simm16 [ addr = inst_next + simm16; ] 
-{
-     export addr; 
-}
-EA: "[,"idxReg"]"    is idxReg & noOffset5=1 & idxMode=0b10100
-{
-     local addr:2 = *:2 idxReg;
-     export addr; 
-}
-EA: "["simm8,idxReg"]"    is idxReg & noOffset5=1 & idxMode=0b11000; simm8
-{
-     local offs:1 = simm8;
-     local addr:2 = idxReg + sext(offs);
-     addr = *:2 addr;
-     export addr; 
-}
-EA: "["simm16,idxReg"]"    is idxReg & noOffset5=1 & idxMode=0b11001; simm16
-{
-     local addr:2 = idxReg + simm16;
-     addr = *:2 addr;
-     export addr; 
-}
-
+# 1RR10000 [,W]
 @ifdef H6309
 EA: "[,"W"]"    is idxReg=0b00 & noOffset5=1 & idxMode=0b10000 & W
 {
@@ -234,65 +126,6 @@ EA: "["simm16,W"]"    is idxReg=0b01 & noOffset5=1 & idxMode=0b10000; simm16 & W
      addr = *:2 addr;
      export addr; 
 }
-@endif # H6309
-
-EA: "["^A,idxReg"]"    is A & idxReg & noOffset5=1 & idxMode=0b10110
-{
-     local addr:2 = idxReg + sext(A);
-     addr = *:2 addr;
-     export addr; 
-}
-EA: "["^B,idxReg"]"    is B & idxReg & noOffset5=1 & idxMode=0b10101
-{
-     local addr:2 = idxReg + sext(B);
-     addr = *:2 addr;
-     export addr; 
-}
-EA: "["^D,idxReg"]"    is D & idxReg & noOffset5=1 & idxMode=0b11011
-{
-     local addr:2 = idxReg + D;
-     addr = *:2 addr;
-     export addr; 
-}
-
-@ifdef H6309
-EA: "["^E,idxReg"]"    is E & idxReg & noOffset5=1 & idxMode=0b10111
-{
-     local addr:2 = idxReg + sext(E);
-     addr = *:2 addr;
-     export addr; 
-}
-EA: "["^F,idxReg"]"    is F & idxReg & noOffset5=1 & idxMode=0b11010
-{
-     local addr:2 = idxReg + sext(F);
-     addr = *:2 addr;
-     export addr; 
-}
-EA: "["^W,idxReg"]"    is W & idxReg & noOffset5=1 & idxMode=0b11110
-{
-     local addr:2 = idxReg + W;
-     addr = *:2 addr;
-     export addr; 
-}
-@endif # H6309
-
-
-EA: "[,"idxReg"++]"    is idxReg & noOffset5=1 & idxMode=0b10001
-{
-     local addr:2 = idxReg;
-     addr = *:2 addr;
-     idxReg = idxReg + 2;
-     export addr;
-}
-EA: "[,--"idxReg"]"    is idxReg & noOffset5=1 & idxMode=0b10011
-{
-     idxReg = idxReg - 2;
-     local addr:2 = idxReg;
-     addr = *:2 addr;
-     export addr;
-}
-
-@ifdef H6309
 EA: "[,"^W^"++]"    is W & idxReg=0b10 & noOffset5=1 & idxMode=0b10000
 {
      local addr:2 = W;
@@ -307,27 +140,265 @@ EA: "[,--"^W^"]"    is W & idxReg=0b11 & noOffset5=1 & idxMode=0b10000
      addr = *:2 addr;
      export addr;
 }
+
 @endif # H6309
 
-EA: "["addr",PCR]" is noOffset5=1 & idxMode=0b11100; simm8 [ addr = inst_next + simm8; ] 
+
+
+# 1RRi0001 ,R++
+EA: ","^idxReg^"++"    is idxReg & noOffset5=1 & idxMode=0b00001 # ,R++
+{
+     local addr:2 = idxReg;
+	 idxReg = idxReg + 2;
+     export addr;
+}
+
+# 1RRi0001 [,R++]
+EA: "[,"^idxReg^"++]"    is idxReg & noOffset5=1 & idxMode=0b10001 # ,R++
+{
+     local addr:2 = idxReg;
+	 addr = *:2 addr;
+     idxReg = idxReg + 2;
+     export addr;
+}
+
+# 1RR00010 ,-R
+EA: ",-"^idxReg    is idxReg & noOffset5=1 & idxMode=0b00010 # ,-R
+{
+     idxReg = idxReg - 1;
+     local addr:2 = idxReg;
+     export addr;
+}
+
+
+# 1RRi0011 ,--R
+EA: ",--"^idxReg    is idxReg & noOffset5=1 & idxMode2=0b00011 # ,--R
+{
+     idxReg = idxReg - 2;
+     local addr:2 = idxReg;
+     export addr;
+}
+
+# 1RRi0011 [,--R]
+EA: "[,--"^idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b10011 # ,--R
+{
+     idxReg = idxReg - 2;
+     local addr:2 = idxReg;
+	 addr = *:2 addr;
+     export addr;
+}
+
+# 1RRi0100 ,R + 0
+EA: ","^idxReg    is idxReg & noOffset5=1 & idxMode=0b00100 # no offset
+{
+     local addr:2 = idxReg;
+     export addr; 
+}
+
+# 1RRi0100 [,R + 0]
+EA: "[,"^idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b10100 # no offset
+{
+     local addr:2 = idxReg;
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi0101 EA= ,R + ACCB offset
+EA: B,idxReg    is idxReg & noOffset5=1 & idxMode2=0b00101 & B # B,R
+{
+     local addr:2 = idxReg + sext(B);
+     export addr; 
+}
+
+# 1RRi0101 EA= [,R + ACCB offset]
+EA: "["^B,idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b10101 & B # B,R
+{
+     local addr:2 = idxReg + sext(B);
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi0110 EA= ,R + ACCA offset
+EA: A,idxReg    is idxReg & noOffset5=1 & idxMode=0b00110 & A # A,R
+{
+     local addr:2 = idxReg + sext(A);
+     export addr; 
+}
+
+# 1RRi0110 EA= ,R + ACCA offset
+EA: "["^A,idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b10110 & A # A,R
+{
+     local addr:2 = idxReg + sext(A);
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi0111 NO 6809, needs checking
+@ifdef H6309
+EA: E,idxReg    is idxReg & noOffset5=1 & idxMode=0b00111 & E # E,R
+{
+     local addr:2 = idxReg + sext(E);
+     export addr; 
+}
+
+EA: "["^E,idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b10111 & E # E,R
+{
+     local addr:2 = idxReg + sext(E);
+	 addr = *:2 addr;
+     export addr; 
+}
+@endif # H6309
+
+# 1RRi1000 EA = ,R + 8bit
+EA: simm8,idxReg    is idxReg & noOffset5=1 & idxMode=0b01000; simm8 # 8-bit offset
+{
+     local addr:2 = idxReg + simm8;
+     export addr; 
+}
+
+# 1RRi1000 EA = [,R + 8bit]
+EA: simm8,idxReg    is idxReg & noOffset5=1 & idxMode=0b11000; simm8 # 8-bit offset
+{
+     local addr:2 = idxReg + simm8;
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi1001 EA = ,R + 16bit 
+EA: simm16,idxReg    is idxReg & noOffset5=1 & idxMode=0b01001; simm16
+{
+     local addr:2 = idxReg + simm16;
+     export addr; 
+}
+
+# 1RRi1001 EA = ,R + 16bit 
+EA: "["simm16,idxReg"]"    is idxReg & noOffset5=1 & idxMode=0b11001; simm16
+{
+     local addr:2 = idxReg + simm16;
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi1010 NO 6809
+@ifdef H6309
+EA: F,idxReg    is idxReg & noOffset5=1 & idxMode=0b01010 & F # F,R
+{
+     local addr:2 = idxReg + sext(F);
+     export addr; 
+}
+EA: "["^F,idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b11010 & F # F,R
+{
+     local addr:2 = idxReg + sext(F);
+	 addr = *:2 addr;
+     export addr; 
+}
+@endif # H6309
+
+
+
+
+# 1RRi1011 EA = ,R +D offset
+EA: D,idxReg    is idxReg & noOffset5=1 & idxMode=0b01011 & D # D,R
+{
+     local addr:2 = idxReg + D;
+     export addr; 
+}
+EA: "["^D,idxReg^"]"    is idxReg & noOffset5=1 & idxMode=0b11011 & D # D,R
+{
+     local addr:2 = idxReg + D;
+	 addr = *:2 addr;
+     export addr; 
+}
+
+# 1RRi1100 EA = ,PC + 8bit
+EA: addr,"PCR" is noOffset5=1 & idxMode=0b01100; simm8 [ addr = inst_next + simm8; ] 
+{
+     export addr; 
+}
+
+# 1RRi1100 EA = ,PC + 8bit
+EA: "["addr,"PCR]" is noOffset5=1 & idxMode=0b11100; simm8 [ addr = inst_next + simm8; ] 
 {
      local eaddr:2 = inst_next + simm8;
      eaddr = *:2 eaddr;
      export eaddr; 
 }
-EA: "["addr",PCR]" is noOffset5=1 & idxMode=0b11101; simm16 [ addr = inst_next + simm16; ] 
+
+# 1RRi1101 EA = ,PC + 16 bit
+EA: addr,"PCR" is noOffset5=1 & idxMode=0b01101; simm16 [ addr = inst_next + simm16; ] 
+{
+     export addr; 
+}
+
+EA: "["addr,"PCR]" is noOffset5=1 & idxMode=0b11101; simm16 [ addr = inst_next + simm16; ] 
 {
      local eaddr:2 = inst_next + simm16;
      eaddr = *:2 eaddr;
      export eaddr; 
 }
 
-EA: "["addr"]" is noOffset5=1 & idxReg=0b00 & idxMode=0b11101; simm16 [ addr = inst_next; ] 
+
+
+
+
+# 1RRi1110 NO 6809
+@ifdef H6309
+EA: W,idxReg    is idxReg & noOffset5=1 & idxMode=0b01110 & W # W,R
+{
+     local addr:2 = idxReg + W;
+     export addr; 
+}
+EA: "["^W,idxReg"^]"    is idxReg & noOffset5=1 & idxMode=0b11110 & W # W,R
+{
+     local addr:2 = idxReg + W;
+	 addr = *:2 addr;
+     export addr; 
+}
+@endif # H6309
+
+
+# 1RR01111 NO 6809
+@ifdef H6309
+EA: ","^W    is idxReg=0b00 & noOffset5=1 & idxMode=0b01111 & W # no offset
+{
+     local addr:2 = W;
+     export addr; 
+}
+
+EA: simm16,W    is idxReg=0b01 & noOffset5=1 & idxMode=0b01111; simm16 & W # 16-bit offset
+{
+     local addr:2 = W + simm16;
+     export addr; 
+}
+EA: ","^W^"++"    is idxReg=0b10 & noOffset5=1 & idxMode=0b01111 & W # ,W++
+{
+     local addr:2 = W;
+     W = W + 2;
+     export addr;
+}
+EA: ",--"^W    is idxReg=0b11 & noOffset5=1 & idxMode=0b01111 & W # ,--W
+{
+     W = W - 2;
+     local addr:2 = W;
+     export addr;
+}
+@endif # H6309
+
+
+
+# 1RR11111 EA = [,Address]
+EA: "["addr"]" is noOffset5=1 & idxReg=0b00 & idxMode=0b11111; simm16 [ addr = inst_next; ] 
 {
      local eaddr:2 = inst_next;
      eaddr = *:2 eaddr;
      export eaddr; 
 }
+
+
+
+
+
+
 
 ################################################################
 # Constructors
@@ -380,6 +451,20 @@ OP2: imm16      is (op47=7 | op47=0xB | op47=0xF); imm16
 {
     export *:2 imm16;
 }
+
+# 2-byte EA operand for JMP/JSR
+EA2: imm8,X      is addrMode=2 & X; imm8
+{
+    local tmp:2 = X + imm8;
+    export tmp;
+}
+
+EA2: imm16    is addrMode=3; imm16
+{
+    local tmp:2 = imm16;
+    export tmp;
+}
+
 
 ################################################################
 # Macros
@@ -803,10 +888,13 @@ macro PushEntireState()
         test(OP1);
 }
  
-:JMP OP2    is (op=0x0E | op=0x6E | op=0x7E) ... & OP2
+:JMP EA2    is (op=0x0E | op=0x6E | op=0x7E) ... & EA2
 {
-        local target = OP2;
-        goto [target];
+        #local target = OP2;
+        #goto [target];
+		
+		local target:2 = EA2;
+		goto [target];
 }
 
 :CLRA    is op=0x4F 
@@ -1362,7 +1450,7 @@ macro PushEntireState()
 # Page 3 Opcodes (prefix 0x11)
 ################################################################
 
-:SWI3    is PAGE3; op=0x3F
+:SWI3    is preop=0x113F
 {
         PushEntireState();
         tmp:2 = $(SWI3_VECTOR);
@@ -1378,4 +1466,3 @@ macro PushEntireState()
 {
         compare(S, OP2);
 }
-
