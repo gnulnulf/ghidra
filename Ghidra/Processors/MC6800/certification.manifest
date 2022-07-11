@@ -18,3 +18,4 @@ data/languages/mc6800.cspec||GHIDRA||||END|
 data/languages/mc6800.ldefs||GHIDRA||||END|
 data/languages/mc6800.pspec||GHIDRA||||END|
 data/languages/mc6800.slaspec||GHIDRA||||END|
+data/patterns/mc6800.xml||GHIDRA||||END|

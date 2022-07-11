@@ -1,0 +1,32 @@
+<patternlist>
+ <patternpairs >
+    <prepatterns>
+      <data>0x39</data> <!-- rts -->
+      <data>0x20..</data> <!-- bra -->
+      <data>0x7e1...</data> <!-- jmp -->
+      <data>0x7e5...</data> <!-- jmp -->
+      <data>0x7ef...</data> <!-- jmp -->
+      <data>0x6e00</data> <!-- JMP 0,X -->
+      <data>0xffffff</data> <!-- multiple ff filler bytes -->
+    </prepatterns>
+	
+    <postpatterns>
+      <data>0x86</data>  <!-- LDA -->
+      <data>0xb6</data>  <!-- LDA -->
+      <data>0xc6</data>  <!-- LDB -->
+      <data>0xd6</data>  <!-- LDB -->
+      <data>0xce</data>  <!-- LDX -->
+      <data>0x16</data>  <!-- TAB -->
+      <data>0x36</data>  <!-- PSHA -->
+      <data>0x37</data>  <!-- PSHB -->
+      <data>0x8d..</data>  <!-- BSR  -->
+      <data>0xbd1...</data>  <!-- JSR in ROM -->
+      <data>0xbd5...</data>  <!-- JSR in ROM -->
+      <data>0xbdf...</data>  <!-- JSR in ROM -->
+      <data>0x7e1...</data>  <!-- JMP in ROM -->
+      <data>0x7e5...</data>  <!-- JMP in ROM -->
+      <data>0x7ef...</data>  <!-- JMP in ROM -->
+      <possiblefuncstart/>
+    </postpatterns>
+  </patternpairs>
+ </patternlist>

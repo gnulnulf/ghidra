@@ -1,0 +1,7 @@
+<patternconstraints>
+  <language id="6800:BE:16:default">
+  	<compiler id="default">
+  	  <patternfile>mc6800.xml</patternfile>
+  	</compiler>
+  </language>
+</patternconstraints>
